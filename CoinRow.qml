@@ -40,6 +40,17 @@ Item {
       : rowMouse.containsMouse ? root.app.ui.hover : "transparent"
   }
 
+  // The cursor, or the coin open beside the list: a bar as well as a tint, so
+  // the row stays findable on themes where the tint is faint.
+  Rectangle {
+    visible: root.selected
+    width: 3
+    height: parent.height - 12
+    anchors.verticalCenter: parent.verticalCenter
+    radius: 1.5
+    color: root.app.ui.accent
+  }
+
   MouseArea {
     id: rowMouse
     anchors.fill: parent

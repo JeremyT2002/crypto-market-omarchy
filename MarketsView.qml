@@ -56,16 +56,7 @@ Item {
     { key: "vol", desc: true, label: "Volume" },
     { key: "ch7d", desc: true, label: "7d gainers" }
   ]
-  function sortLabel() {
-    for (var i = 0; i < sorts.length; i++)
-      if (sorts[i].key === list.sortKey && sorts[i].desc === list.descending) return sorts[i].label
-    return "Custom"
-  }
-  function nextSort() {
-    var at = -1
-    for (var i = 0; i < sorts.length; i++)
-      if (sorts[i].key === list.sortKey && sorts[i].desc === list.descending) at = i
-    var s = sorts[(at + 1) % sorts.length]
+  function applySort(s) {
     list.sortKey = s.key
     list.descending = s.desc
     list.positionViewAtBeginning()
@@ -108,34 +99,68 @@ Item {
           width: parent.width - 24
           height: chips.height
 
-          Row {
-            id: chips
-            spacing: 8
-            Chip {
-              visible: !root.category
-              app: root.app
-              text: "Top " + root.app.store.topN
-              onClicked: {
-                var steps = [100, 250, 500, 1000]
-                root.app.store.set("topN", steps[(steps.indexOf(root.app.store.topN) + 1) % steps.length])
+          // Every sort order is a chip of its own, so what the list is sorted
+          // by is always on screen and one press away. They scroll sideways
+          // where they do not fit, as on a phone.
+          Flickable {
+            anchors.left: parent.left
+            anchors.right: refreshBtn.visible ? refreshBtn.left : parent.right
+            anchors.rightMargin: refreshBtn.visible ? 4 : 0
+            height: chips.height
+            contentWidth: chips.width
+            contentHeight: chips.height
+            flickableDirection: Flickable.HorizontalFlick
+            boundsBehavior: Flickable.StopAtBounds
+            clip: true
+
+            Row {
+              id: chips
+              spacing: 8
+              Chip {
+                visible: !root.category
+                app: root.app
+                text: "Top " + root.app.store.topN
+                onClicked: {
+                  var steps = [100, 250, 500, 1000]
+                  root.app.store.set("topN", steps[(steps.indexOf(root.app.store.topN) + 1) % steps.length])
+                }
               }
-            }
-            Chip {
-              app: root.app
-              text: "Sort: " + root.sortLabel()
-              onClicked: root.nextSort()
+              Repeater {
+                model: root.sorts
+                delegate: Chip {
+                  required property var modelData
+                  app: root.app
+                  text: modelData.label
+                  selected: list.sortKey === modelData.key && list.descending === modelData.desc
+                  onClicked: root.applySort(modelData)
+                }
+              }
             }
           }
 
           IconButton {
+            id: refreshBtn
             visible: !root.app.compact
             anchors.right: parent.right
-            anchors.verticalCenter: chips.verticalCenter
+            anchors.verticalCenter: parent.verticalCenter
             app: root.app
             glyph: "󰑐"
             label: "Refresh"
             size: 18
             onClicked: root.app.refresh(true)
+
+            // Turns while the list loads; alwaysRunToEnd lets the last turn
+            // finish, so it stops upright.
+            NumberAnimation {
+              target: refreshBtn
+              property: "rotation"
+              from: 0
+              to: 360
+              duration: 900
+              loops: Animation.Infinite
+              running: root.loading
+              alwaysRunToEnd: true
+            }
           }
         }
       }

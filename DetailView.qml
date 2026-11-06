@@ -38,6 +38,21 @@ Item {
   // newer; show whichever is younger.
   readonly property real price: coin.price
 
+  // The badge beside the price follows the chart's range, so the number and
+  // the line under it always describe the same stretch of time. The 24h
+  // figure is CoinGecko's own; any other range is read off the chart, and
+  // until that arrives the badge says 24h rather than mislabel it.
+  readonly property bool chartReady: points.length > 1
+  readonly property bool badgeIsRange: days !== "1" && chartReady && points[0][1] > 0
+  readonly property real badgeChange: badgeIsRange
+    ? (points[points.length - 1][1] / points[0][1] - 1) * 100
+    : coin.ch24
+  readonly property string badgeLabel: {
+    if (!badgeIsRange) return "24h"
+    for (var i = 0; i < ranges.length; i++) if (ranges[i].days === days) return ranges[i].label
+    return ""
+  }
+
   readonly property bool wide: width >= 620
   readonly property int pad: app.compact ? 14 : 20
 
@@ -183,7 +198,14 @@ Item {
             anchors.verticalCenter: bigPrice.verticalCenter
             app: root.app
             badge: true
-            value: root.coin.ch24
+            value: root.badgeChange
+            font.pixelSize: root.app.ui.fs.sm
+          }
+          Text {
+            anchors.verticalCenter: bigPrice.verticalCenter
+            text: root.badgeLabel
+            color: root.app.ui.muted
+            font.family: root.app.ui.font
             font.pixelSize: root.app.ui.fs.sm
           }
         }

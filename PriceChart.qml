@@ -175,11 +175,21 @@ Item {
         font.pixelSize: root.app.ui.fs.sm
         font.weight: Font.DemiBold
       }
-      Text {
-        text: root.hover >= 0 ? Api.stamp(root.points[root.hover][0], root.days) : ""
-        color: root.app.ui.muted
-        font.family: root.app.ui.font
-        font.pixelSize: root.app.ui.fs.xs
+      Row {
+        spacing: 6
+        Text {
+          text: root.hover >= 0 ? Api.stamp(root.points[root.hover][0], root.days) : ""
+          color: root.app.ui.muted
+          font.family: root.app.ui.font
+          font.pixelSize: root.app.ui.fs.xs
+        }
+        // The move since the start of the range, up to the pointer.
+        Change {
+          visible: root.hover >= 0 && root.points[0][1] > 0
+          app: root.app
+          value: root.hover >= 0 && root.points[0][1] > 0 ? (root.points[root.hover][1] / root.points[0][1] - 1) * 100 : NaN
+          font.pixelSize: root.app.ui.fs.xs
+        }
       }
     }
   }

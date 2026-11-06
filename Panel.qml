@@ -31,6 +31,25 @@ Item {
   function alpha(c, a) { return Qt.rgba(c.r, c.g, c.b, a) }
   function luminance(c) { return 0.2126 * c.r + 0.7152 * c.g + 0.0722 * c.b }
 
+  // WCAG contrast, so secondary text can be held to a readable minimum
+  // whatever palette the host theme brings.
+  function linear(v) { return v <= 0.04045 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4) }
+  function relLum(c) { return 0.2126 * linear(c.r) + 0.7152 * linear(c.g) + 0.0722 * linear(c.b) }
+  function contrast(a, b) {
+    var x = relLum(a), y = relLum(b)
+    return (Math.max(x, y) + 0.05) / (Math.min(x, y) + 0.05)
+  }
+  // `fg`, moved toward `toward` in tenths until it reads at `min`:1 on
+  // `ground`. A colour that already does is returned untouched.
+  function readable(fg, toward, ground, min) {
+    for (var i = 0; i <= 10; i++) {
+      var t = i / 10
+      var c = Qt.rgba(fg.r + (toward.r - fg.r) * t, fg.g + (toward.g - fg.g) * t, fg.b + (toward.b - fg.b) * t, fg.a)
+      if (contrast(c, ground) >= min) return c
+    }
+    return toward
+  }
+
   // Omarchy's theme inside its shell, a plain one under any other Quickshell.
   HostTheme { id: theme }
   Component.onCompleted: theme.probe(root)
@@ -39,7 +58,9 @@ Item {
     readonly property bool dark: root.luminance(theme.background) < 0.5
     readonly property color bg: theme.background
     readonly property color text: theme.text
-    readonly property color muted: theme.muted
+    // Held to 4.5:1 on the lightest ground it is drawn on (the tiles), so
+    // labels stay readable on themes whose "muted" is a dim grey.
+    readonly property color muted: root.readable(theme.muted, theme.text, surfaceHigh, 4.5)
     readonly property color accent: theme.accent
     readonly property color border: theme.border
     readonly property color surface: Qt.tint(bg, root.alpha(text, dark ? 0.06 : 0.04))
@@ -61,7 +82,7 @@ Item {
     readonly property int target: root.compact ? 44 : 38
     readonly property int chip: root.compact ? 36 : 32
     readonly property QtObject fs: QtObject {
-      readonly property int xs: 11
+      readonly property int xs: 12
       readonly property int sm: 13
       readonly property int md: 14
       readonly property int lg: 17
