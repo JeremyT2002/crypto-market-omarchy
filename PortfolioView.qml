@@ -1,8 +1,10 @@
 import QtQuick
 import "Api.mjs" as Api
+import "Portfolio.js" as Portfolio
 
 // What you own, what it is worth now, and how that compares with what you
-// paid. Prices for every holding come in one request.
+// paid. Prices for every holding come in one request; the value-over-time
+// chart needs one price history per coin.
 Item {
   id: root
   property var app
@@ -67,10 +69,60 @@ Item {
     return out
   }
 
+  // ------------------------------------------------------------ history
+
+  property string histDays: "30"
+  readonly property var histRanges: [
+    { days: "7", label: "7d" }, { days: "30", label: "1M" },
+    { days: "90", label: "3M" }, { days: "365", label: "1Y" }
+  ]
+  // One price history per coin is one request each, so the chart covers the
+  // twelve largest holdings at most.
+  readonly property int histMax: 12
+  readonly property var histIds: ids.length > histMax
+    ? rows.slice(0, histMax).map(function (r) { return r.id }) : ids
+
+  function histUrl(id) { return Api.chartUrl(id, cur, histDays) }
+
+  readonly property var histCharts: {
+    app.gecko.revision
+    var m = {}
+    for (var i = 0; i < histIds.length; i++) {
+      var p = app.gecko.peek(histUrl(histIds[i]))
+      if (p) m[histIds[i]] = p
+    }
+    return m
+  }
+  readonly property int histHave: Object.keys(histCharts).length
+  // Drawn only once every coin's history is in: a total that grows as the
+  // coins arrive one by one would be a wrong chart for a while.
+  readonly property var history: histIds.length && histHave === histIds.length
+    ? Portfolio.history(holdings, histCharts, histIds) : []
+  readonly property bool histLoading: {
+    app.gecko.revision
+    for (var i = 0; i < histIds.length; i++) if (app.gecko.busy(histUrl(histIds[i]))) return true
+    return false
+  }
+  readonly property string histError: {
+    app.gecko.revision
+    for (var i = 0; i < histIds.length; i++) {
+      var e = app.gecko.error(histUrl(histIds[i]))
+      if (e) return e
+    }
+    return ""
+  }
+
   function refresh(force) {
     if (url) app.gecko.want(url, "markets", force ? 0 : app.store.refreshSec * 1000, force)
+    // Only while this tab is on screen: a dozen price histories queued at
+    // startup would hold up the list the person is actually looking at.
+    if (!visible) return
+    for (var i = 0; i < histIds.length; i++)
+      app.gecko.want(histUrl(histIds[i]), "chart", force ? 600000 : 1800000, false)
   }
   onUrlChanged: refresh(false)
+  onHistIdsChanged: refresh(false)
+  onHistDaysChanged: refresh(false)
 
   property alias list: list
 
@@ -217,6 +269,52 @@ Item {
               }
             }
           }
+        }
+      }
+
+      // Value over time.
+      Column {
+        visible: root.rows.length > 0
+        x: 12
+        width: parent.width - 24
+        spacing: 8
+        Row {
+          spacing: 6
+          Repeater {
+            model: root.histRanges
+            delegate: Chip {
+              required property var modelData
+              app: root.app
+              hpad: root.app.compact ? 20 : 24
+              text: modelData.label
+              selected: root.histDays === modelData.days
+              onClicked: root.histDays = modelData.days
+            }
+          }
+        }
+        PriceChart {
+          width: parent.width
+          height: root.app.compact ? 170 : 200
+          app: root.app
+          neutral: true
+          points: root.history
+          days: root.histDays
+          currency: root.cur
+          loading: root.histLoading || root.histHave < root.histIds.length
+          error: root.history.length ? "" : root.histError
+          empty: "Nothing held in this range yet"
+        }
+        Text {
+          width: parent.width
+          wrapMode: Text.Wrap
+          text: root.history.length ? "Value of the holdings you recorded. It steps when you add a buy or a sell."
+            : root.histHave < root.histIds.length && !root.histError
+              ? "Loading price history · " + root.histHave + " of " + root.histIds.length + " coins"
+              : ""
+          visible: text !== ""
+          color: root.app.ui.muted
+          font.family: root.app.ui.font
+          font.pixelSize: root.app.ui.fs.xs
         }
       }
 

@@ -250,6 +250,11 @@ Item {
           loading: root.chartLoading
           error: root.points.length ? "" : root.chartError
         }
+        Chip {
+          app: root.app
+          text: "Compare with other coins"
+          onClicked: root.app.openCompare(root.coin, root.days)
+        }
       }
 
       // Change over each period.

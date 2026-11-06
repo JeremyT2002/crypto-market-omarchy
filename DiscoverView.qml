@@ -34,6 +34,8 @@ Item {
     var all = app.gecko.peek(top250) || []
     return all.filter(function (r) { return !isNaN(r.ch24) && r.vol >= 50000 })
   }
+  // The whole top 250, for the heatmap.
+  readonly property var topRows: { app.gecko.revision; return app.gecko.peek(top250) || [] }
   readonly property var gainers: movers.slice().sort(function (a, b) { return b.ch24 - a.ch24 }).slice(0, 30)
   readonly property var losers: movers.slice().sort(function (a, b) { return a.ch24 - b.ch24 }).slice(0, 30)
   readonly property var categories: { app.gecko.revision; return app.gecko.peek(Api.categoriesUrl()) || [] }
@@ -63,7 +65,8 @@ Item {
     { key: "trending", label: "Trending" },
     { key: "gainers", label: "Gainers" },
     { key: "losers", label: "Losers" },
-    { key: "categories", label: "Categories" }
+    { key: "categories", label: "Categories" },
+    { key: "heatmap", label: "Heatmap" }
   ]
 
   Component {
@@ -73,7 +76,8 @@ Item {
       topPadding: 4
       bottomPadding: 8
       spacing: 8
-      Row {
+      // A Flow, not a Row: five chips are wider than a phone.
+      Flow {
         id: chipRow
         x: 12
         width: parent.width - 24
@@ -97,6 +101,7 @@ Item {
         text: root.section === "trending" ? "Most searched coins on CoinGecko in the last 24 hours."
           : root.section === "gainers" ? "Biggest 24h risers among the top 250, with at least $50K of volume."
           : root.section === "losers" ? "Biggest 24h fallers among the top 250, with at least $50K of volume."
+          : root.section === "heatmap" ? "The top 60 coins. Size follows market cap (compressed, so small coins stay visible); colour is the 24h change."
           : "Sectors by total market cap, in US dollars."
         color: root.app.ui.muted
         font.family: root.app.ui.font
@@ -108,7 +113,7 @@ Item {
   CoinList {
     id: list
     anchors.fill: parent
-    visible: root.section !== "categories"
+    visible: root.section !== "categories" && root.section !== "heatmap"
     app: root.app
     rows: root.section === "trending" ? root.trendingRows : root.section === "gainers" ? root.gainers : root.losers
     sortKey: "custom"
@@ -117,6 +122,31 @@ Item {
     emptyGlyph: "󰈸"
     emptyTitle: "Nothing moving yet"
     topContent: tabs
+  }
+
+  Item {
+    id: heat
+    anchors.fill: parent
+    visible: root.section === "heatmap"
+
+    Loader {
+      id: heatTabs
+      width: parent.width
+      sourceComponent: tabs
+    }
+    Heatmap {
+      anchors.top: heatTabs.bottom
+      anchors.left: parent.left
+      anchors.right: parent.right
+      anchors.bottom: parent.bottom
+      anchors.leftMargin: 12
+      anchors.rightMargin: 12
+      anchors.bottomMargin: 12
+      app: root.app
+      rows: root.topRows
+      loading: root.loading
+      error: root.error
+    }
   }
 
   ListView {

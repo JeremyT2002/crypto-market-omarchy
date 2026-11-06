@@ -32,17 +32,26 @@ portfolio, in an app window that lays itself out for the desktop and for the pho
 - All-time high and low, with dates.
 - The project's description, categories and links.
 - A converter: coin to currency and back.
+- **Compare**: put up to four coins on one chart, each rebased to 0% at the
+  start of the range, so Bitcoin and a one-cent coin share a scale. Pick from
+  Bitcoin, Ethereum, Solana, your watchlist and the top of the market.
 
 **Discover, search and watchlist**
 - Trending coins on CoinGecko.
 - The day's biggest gainers and losers among the top 250 (anything under $50K
   of volume is left out), and every category by market cap.
+- A **heatmap** of the top 60 coins: area follows market cap (compressed, so
+  small coins stay visible), colour follows the 24h change. Press a tile to
+  open the coin.
 - Search for any coin CoinGecko lists.
 - Star any coin to add it to your watchlist.
 
 **Portfolio**
 - Record buys and sells to see today's value, the 24h change, profit and loss
   per coin, and an allocation bar.
+- A value-over-time chart (7d, 1M, 3M, 1Y) built from your transactions and
+  each coin's price history, for your twelve largest holdings. It shows the
+  value of what you held, so it steps when you add a buy or a sell.
 
 **Everything else**
 - 15 currencies, including BTC, ETH and sats.

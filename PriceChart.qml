@@ -16,12 +16,18 @@ Item {
   property string currency: "usd"
   property bool loading: false
   property string error: ""
+  // For a line that is not a price (a portfolio's value jumps when you buy):
+  // the accent colour instead of green or red, and no "change since the
+  // start" in the tooltip.
+  property bool neutral: false
+  // What the chart says when there is nothing to draw and nothing coming.
+  property string empty: "No price history"
 
   readonly property bool ready: points && points.length > 1
   readonly property real lo: ready ? minOf(points) : 0
   readonly property real hi: ready ? maxOf(points) : 0
   readonly property bool rising: ready && points[points.length - 1][1] >= points[0][1]
-  readonly property color ink: rising ? app.ui.up : app.ui.down
+  readonly property color ink: neutral ? app.ui.accent : rising ? app.ui.up : app.ui.down
 
   // Where the plot is, inside the item: the price labels take the right.
   readonly property real plotTop: 14
@@ -185,7 +191,7 @@ Item {
         }
         // The move since the start of the range, up to the pointer.
         Change {
-          visible: root.hover >= 0 && root.points[0][1] > 0
+          visible: !root.neutral && root.hover >= 0 && root.points[0][1] > 0
           app: root.app
           value: root.hover >= 0 && root.points[0][1] > 0 ? (root.points[root.hover][1] / root.points[0][1] - 1) * 100 : NaN
           font.pixelSize: root.app.ui.fs.xs
@@ -200,7 +206,7 @@ Item {
     width: parent.width - 24
     horizontalAlignment: Text.AlignHCenter
     wrapMode: Text.Wrap
-    text: root.error ? root.error : root.loading ? "Loading chart…" : "No price history"
+    text: root.error ? root.error : root.loading ? "Loading chart…" : root.empty
     color: root.app.ui.muted
     font.family: root.app.ui.font
     font.pixelSize: root.app.ui.fs.sm

@@ -104,8 +104,9 @@ Item {
   ]
 
   property string tab: "markets"
-  // Pages over the current tab: { kind: "coin", id, seed } or
-  // { kind: "category", id, name }.
+  // Pages over the current tab: { kind: "coin", id, seed },
+  // { kind: "category", id, name }, or { kind: "compare", id, seed, days },
+  // which sits on top of the coin page it was opened from.
   property var stack: []
   property bool picking: false
   property bool txOpen: false
@@ -115,7 +116,10 @@ Item {
     for (var i = stack.length - 1; i >= 0; i--) if (stack[i].kind === "category") return stack[i]
     return null
   }
-  readonly property string openCoinId: page && page.kind === "coin" ? page.id : ""
+  readonly property bool isCompare: page !== null && page.kind === "compare"
+  // The coin page stays alive under a compare page, so back returns to it as
+  // it was (range, scroll) and the split layout keeps its list beside it.
+  readonly property string openCoinId: page && (page.kind === "coin" || page.kind === "compare") ? page.id : ""
   readonly property bool split: !compact && main.width >= 960 && openCoinId !== ""
 
   function setTab(key) {
@@ -137,10 +141,22 @@ Item {
     resetFocus()
     var page = { kind: "coin", id: coin.id, seed: coin }
     var s = stack.slice()
+    // A coin picked from the list beside a compare page leaves the compare.
+    while (s.length && s[s.length - 1].kind === "compare") s.pop()
     // Coin to coin replaces rather than piles up: back from a coin goes to
     // the list it was picked from, not through every coin looked at.
     if (s.length && s[s.length - 1].kind === "coin") s[s.length - 1] = page
     else s.push(page)
+    stack = s
+  }
+
+  // The compare page for the coin on screen, at the range its chart is on.
+  function openCompare(coin, days) {
+    if (!coin || !Api.safeId(coin.id)) return
+    resetFocus()
+    var s = stack.slice()
+    if (s.length && s[s.length - 1].kind === "compare") return
+    s.push({ kind: "compare", id: coin.id, seed: coin, days: days || "7" })
     stack = s
   }
 
@@ -182,6 +198,7 @@ Item {
     var v = currentView()
     if (v && v.refresh) v.refresh(force)
     if (detailLoader.item) detailLoader.item.refresh(force)
+    if (compareLoader.item) compareLoader.item.refresh(force)
   }
 
   function currentView() {
@@ -336,7 +353,7 @@ Item {
 
           Keys.onPressed: function (event) {
             var v = root.currentView()
-            var list = v && v.list ? v.list : null
+            var list = !root.isCompare && v && v.list ? v.list : null
             var detail = detailLoader.item
             var k = event.key
             // One step back; at the top there is nothing to leave -- an app
@@ -346,6 +363,7 @@ Item {
             if (k === Qt.Key_Down && list) { event.accepted = list.move(1); return }
             if (k === Qt.Key_Up && list) { event.accepted = list.move(-1); return }
             if ((k === Qt.Key_Return || k === Qt.Key_Enter) && list) { event.accepted = list.activateCurrent(); return }
+            if ((k === Qt.Key_Left || k === Qt.Key_Right) && root.isCompare && compareLoader.item) { compareLoader.item.stepRange(k === Qt.Key_Left ? -1 : 1); event.accepted = true; return }
             if ((k === Qt.Key_Left || k === Qt.Key_Right) && detail) { detail.stepRange(k === Qt.Key_Left ? -1 : 1); event.accepted = true; return }
             if (event.modifiers & (Qt.ControlModifier | Qt.AltModifier | Qt.MetaModifier)) return
             if (event.text === "/") { root.setTab("search"); Qt.callLater(searchView.focusField); event.accepted = true; return }
@@ -614,7 +632,27 @@ Item {
                   app: root
                   pane: root.split
                   coinId: root.openCoinId
-                  seed: root.page && root.page.kind === "coin" ? root.page.seed : null
+                  seed: root.page ? root.page.seed : null
+                }
+              }
+            }
+
+            // Over the coin page, in the same place.
+            Loader {
+              id: compareLoader
+              active: root.isCompare
+              z: 4
+              x: root.split ? listSide.width + 1 : 0
+              y: 0
+              width: root.split ? parent.width - listSide.width - 1 : parent.width
+              height: root.compact ? keys.height : parent.height
+              sourceComponent: Component {
+                CompareView {
+                  app: root
+                  pane: root.split
+                  coinId: root.openCoinId
+                  seed: root.page ? root.page.seed : null
+                  startDays: root.page && root.page.days ? root.page.days : "7"
                 }
               }
             }
