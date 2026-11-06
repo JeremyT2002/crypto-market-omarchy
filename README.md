@@ -32,7 +32,7 @@ portfolio, in an app window that lays itself out for the desktop and for the pho
 - All-time high and low, with dates.
 - The project's description, categories and links.
 - A converter: coin to currency and back.
-- **Compare**: put up to four coins on one chart, each rebased to 0% at the
+- **Compare**: the chart icon in the top bar puts up to four coins on one chart, each rebased to 0% at the
   start of the range, so Bitcoin and a one-cent coin share a scale. Pick from
   Bitcoin, Ethereum, Solana, your watchlist and the top of the market.
 

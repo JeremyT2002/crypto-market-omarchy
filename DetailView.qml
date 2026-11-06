@@ -138,6 +138,12 @@ Item {
       anchors.verticalCenter: parent.verticalCenter
       IconButton {
         app: root.app
+        glyph: "󰄪"
+        label: "Compare with other coins"
+        onClicked: root.app.openCompare(root.coin, root.days)
+      }
+      IconButton {
+        app: root.app
         glyph: "󰐕"
         label: "Add transaction"
         onClicked: root.app.startTx(root.coin)
@@ -249,11 +255,6 @@ Item {
           currency: root.cur
           loading: root.chartLoading
           error: root.points.length ? "" : root.chartError
-        }
-        Chip {
-          app: root.app
-          text: "Compare with other coins"
-          onClicked: root.app.openCompare(root.coin, root.days)
         }
       }
 
