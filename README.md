@@ -60,32 +60,14 @@ portfolio, in an app window that lays itself out for the desktop and for the pho
 
 ## Requirements
 
-- [Quickshell](https://quickshell.org) and the JetBrains Mono Nerd Font the
-  icons are drawn in. The package depends on both.
+- [Omarchy](https://omarchy.org) with its shell, which provides Quickshell.
+- The JetBrains Mono Nerd Font the icons are drawn in.
 - Network access to `api.coingecko.com`.
-- Omarchy is optional. Without it the app runs as its own Quickshell window, in
-  a plain light or dark palette that follows the desktop's preference.
 
 ## Installation
 
-There are two ways in, and they combine.
-
-### As a package
-
-On any Arch Linux or Arch Linux ARM system with a Wayland desktop:
-
-```sh
-yay -S crypto-market      # or any AUR helper
-```
-
-This installs Quickshell if it is missing, a `crypto-market` command and an app
-menu entry. The command opens the app inside the running Omarchy shell when the
-shell has the plugin (below), and as its own Quickshell window everywhere else.
-Closing that window ends the process.
-
-### As an Omarchy plugin
-
-The plugin stays loaded in the shell, so it opens instantly:
+Crypto Market is an Omarchy plugin. It stays loaded in the shell, so it opens
+instantly:
 
 ```sh
 omarchy plugin add https://github.com/JeremyT2002/crypto-market-omarchy.git --enable
@@ -107,8 +89,7 @@ o.bind("SUPER + SHIFT + C", "Crypto Market", "omarchy-shell shell toggle io.gith
 ```
 
 Or run `omarchy-shell shell toggle io.github.simonschubert.crypto-market` from
-anywhere. With the package installed, `crypto-market` opens the app, and
-`crypto-market bitcoin` opens straight on a coin page.
+anywhere.
 
 Crypto Market opens as a normal window, so Hyprland tiles, focuses and closes
 it like any other app. The keybinding toggles it.
@@ -156,8 +137,7 @@ omarchy-restart-shell
 ```
 
 The restart matters: Crypto Market stays loaded between opens, and Omarchy
-keeps a loaded plugin's old code running until the shell restarts. The package
-is updated through your AUR helper.
+keeps a loaded plugin's old code running until the shell restarts.
 
 ### Remove
 

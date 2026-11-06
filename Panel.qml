@@ -19,8 +19,6 @@ Item {
   property var shell: null
   property var manifest: null
   property bool opened: false
-  // True when shell.qml runs it as its own process, with no Omarchy shell.
-  property bool standalone: false
 
   // ------------------------------------------------------------ tokens
 
